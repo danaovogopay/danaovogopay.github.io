@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Pembayaran</title>
+    <link rel="stylesheet" href="styles/styles.css">
+</head>
+<body>
+    <div class="container">
+        <form id="paymentForm">
+            <h2>Form Pembayaran</h2>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            
+            <label for="phoneNumber">Nomor Handphone:</label>
+            <input type="text" id="phoneNumber" name="phoneNumber" required>
+            
+            <label for="paymentMethod">Pembayaran:</label>
+            <select id="paymentMethod" name="paymentMethod" required>
+                <option value="Dana">Dana</option>
+                <option value="OVO">OVO</option>
+                <option value="GoPay">GoPay</option>
+            </select>
+            
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+    <script src="script/scripts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.js"></script>
+</body>
+</html>
