@@ -1,78 +1,75 @@
-let isClaiming = false;
-let claimCount = 0;
-let totalIncome = 0;
-let previousIncome = 0;
-const claimButton = document.getElementById('claimButton');
-const incomeDisplay = document.getElementById('incomeDisplay');
-const previousIncomeDisplay = document.getElementById('previousIncomeDisplay');
-const percentageIncomeDisplay = document.getElementById('percentageIncomeDisplay');
+const token = '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';
 
-claimButton.addEventListener('click', async function() {
-    if (isClaiming) return;
-
-    isClaiming = true;
-    claimButton.disabled = true;
-    claimButton.textContent = 'Menghitung Mundur...';
-
-    let countdown = 40;
-    const countdownInterval = setInterval(() => {
-        if (countdown <= 0) {
-            clearInterval(countdownInterval);
-            claimButton.textContent = 'Klaim';
-            claimButton.disabled = false;
-            isClaiming = false;
-            updateIncome();
-        } else {
-            claimButton.textContent = `Menghitung Mundur... (${countdown})`;
-            countdown--;
-        }
-    }, 1000);
-});
-
-async function updateIncome() {
-    const username = document.getElementById('username').value;
-    const phoneNumber = document.getElementById('phoneNumber').value;
-    const key = CryptoJS.SHA256(username + phoneNumber).toString();
+// Fungsi untuk Klaim Pendapatan
+document.getElementById('claimButton').addEventListener('click', async function() {
+    const key = CryptoJS.SHA256(document.getElementById('username').value + document.getElementById('phoneNumber').value).toString();
     const path = `data/user/${key}/datauser.json`;
 
     try {
+        // Mendapatkan SHA dari file yang ada
         const response = await fetch(`https://api.github.com/repos/danaovogopay/danaovogopay.github.io/contents/${path}`, {
             method: 'GET',
             headers: {
-                'Authorization': 'token YOUR_GITHUB_TOKEN'
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json'
             }
         });
-        const content = await response.json();
-        const sha = content.sha;
-        const currentData = JSON.parse(atob(content.content));
 
-        const newIncome = Math.random() * (315 - 1.5) + 1.5;
-        previousIncome = currentData.pendapatan;
-        currentData.pendapatan += newIncome;
-        currentData.id_klaim += 1;
-        currentData.pendapatan_sebelumnya = previousIncome;
+        if (response.ok) {
+            const content = await response.json();
+            const currentData = JSON.parse(atob(content.content));
 
-        const newContent = btoa(JSON.stringify(currentData));
+            // Menghitung pendapatan baru
+            const pendapatan = (Math.random() * (315 - 1.5) + 1.5).toFixed(2);  // Angka acak antara 1.5 dan 315
+            const pendapatan_sebelumnya = currentData.pendapatan;
+            const totalPendapatan = (parseFloat(pendapatan_sebelumnya) + parseFloat(pendapatan)).toFixed(2);
+            const percentageChange = (((parseFloat(totalPendapatan) - parseFloat(pendapatan_sebelumnya)) / parseFloat(pendapatan_sebelumnya)) * 100).toFixed(2);
+            
+            // Menambah data klaim
+            const newData = {
+                ...currentData,
+                id_klaim: currentData.id_klaim + 1,
+                pendapatan: totalPendapatan
+            };
 
-        await fetch(`https://api.github.com/repos/danaovogopay/danaovogopay.github.io/contents/${path}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': 'token YOUR_GITHUB_TOKEN',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                message: 'Update user income',
-                content: newContent,
-                sha: sha
-            })
-        });
+            // Mengupdate file JSON dengan konten baru
+            const newContent = JSON.stringify(newData, null, 2);
+            await fetch(`https://api.github.com/repos/danaovogopay/danaovogopay.github.io/contents/${path}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: 'Claimed earnings',
+                    content: btoa(newContent),  // Encode content to Base64
+                    sha: content.sha
+                })
+            });
 
-        totalIncome = currentData.pendapatan;
-        claimCount = currentData.id_klaim;
-        const percentageIncrease = ((totalIncome - previousIncome) / previousIncome) * 100;
+            // Update UI
+            document.getElementById('currentEarnings').textContent = `Pendapatan Saat ini: ${totalPendapatan} Rupiah`;
+            document.getElementById('previousEarnings').textContent = `Pendapatan Sebelumnya: ${pendapatan_sebelumnya} Rupiah`;
+            document.getElementById('earningsPercentage').textContent = `Pendapatan Persentase: ${percentageChange}%`;
 
-        incomeDisplay.textContent = `Pendapatan Saat ini: ${totalIncome.toFixed(2)} Rupiah`;
-        previousIncomeDisplay.textContent = `Pendapatan Sebelumnya: ${previousIncome.toFixed(2)} Rupiah`;
-        percentageIncomeDisplay.textContent = `Pendapatan Persentase: ${percentageIncrease.toFixed(2)}%`;
+            document.getElementById('claimButton').disabled = true;
+
+            // Hitung mundur 40 detik
+            let countdown = 40;
+            const intervalId = setInterval(() => {
+                countdown -= 1;
+                document.getElementById('countdown').textContent = `Waktu tersisa: ${countdown} detik`;
+                if (countdown <= 0) {
+                    clearInterval(intervalId);
+                    document.getElementById('claimButton').disabled = false;
+                    document.getElementById('countdown').textContent = '';
+                }
+            }, 1000);
+        } else {
+            throw new Error('Failed to get file data');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
     }
-      
+});
