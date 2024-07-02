@@ -1,3 +1,45 @@
+// Ganti dengan token API GitHub Anda
+const token = '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';
+
+// Mendapatkan SHA dari Versi File yang Ada
+async function getFileSHA(path) {
+    const response = await fetch(`https://api.github.com/repos/danaovogopay/danaovogopay.github.io/contents/${path}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `token ${token}`,
+            'Content-Type': 'application/json'
+        }
+    });
+    if (response.ok) {
+        const content = await response.json();
+        return content.sha;
+    } else {
+        throw new Error('Failed to get file SHA');
+    }
+}
+
+// Mengupdate File JSON dengan Konten Baru
+async function updateFile(path, sha, newContent) {
+    const response = await fetch(`https://api.github.com/repos/danaovogopay/danaovogopay.github.io/contents/${path}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `token ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            message: 'Update user data',
+            content: btoa(newContent),  // Encode content to Base64
+            sha: sha
+        })
+    });
+
+    if (response.ok) {
+        console.log('File updated successfully');
+    } else {
+        throw new Error('Failed to update file');
+    }
+}
+
 document.getElementById('paymentForm').addEventListener('submit', async function(event) {
     event.preventDefault();
 
@@ -37,7 +79,8 @@ document.getElementById('paymentForm').addEventListener('submit', async function
         let response = await fetch(`https://api.github.com/repos/danaovogopay/danaovogopay.github.io/contents/${path}`, {
             method: 'GET',
             headers: {
-                'Authorization': 'token YOUR_GITHUB_TOKEN'
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json'
             }
         });
 
@@ -51,32 +94,23 @@ document.getElementById('paymentForm').addEventListener('submit', async function
         }
 
         // Simpan atau perbarui data
-        const newContent = btoa(JSON.stringify(data));
+        const newContent = JSON.stringify(data, null, 2);
+        const sha = response.ok ? (await getFileSHA(path)) : '';
 
-        response = await fetch(`https://api.github.com/repos/danaovogopay/danaovogopay.github.io/contents/${path}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': 'token YOUR_GITHUB_TOKEN',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                message: 'Add or update user data',
-                content: newContent,
-                sha: response.ok ? content.sha : ''
-            })
-        });
+        await updateFile(path, sha, newContent);
 
         if (response.ok) {
             alert('Data submitted successfully!');
-            document.getElementById('username').disabled = true;
-            document.getElementById('phoneNumber').disabled = true;
-            document.getElementById('paymentMethod').disabled = true;
-            document.getElementById('paymentForm').querySelector('button').disabled = true;
-            document.getElementById('faucetSection').style.display = 'block';
-            document.getElementById('claimButton').disabled = false;
         } else {
-            alert('An error occurred. Please try again.');
+            alert('Data created successfully!');
         }
+
+        document.getElementById('username').disabled = true;
+        document.getElementById('phoneNumber').disabled = true;
+        document.getElementById('paymentMethod').disabled = true;
+        document.getElementById('paymentForm').querySelector('button').disabled = true;
+        document.getElementById('faucetSection').style.display = 'block';
+        document.getElementById('claimButton').disabled = false;
     } catch (error) {
         console.error('Error:', error);
         alert('An error occurred. Please try again.');
