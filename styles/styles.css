@@ -19,7 +19,7 @@ h2 {
     text-align: center;
 }
 
-form {
+form, #faucetSection {
     display: flex;
     flex-direction: column;
 }
@@ -45,4 +45,9 @@ button {
 
 button:hover {
     background-color: #218838;
+}
+
+button:disabled {
+    background-color: #c3e6cb;
+    cursor: not-allowed;
 }
