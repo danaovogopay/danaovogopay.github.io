@@ -3,40 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Form Pembayaran</title>
-    <link rel="stylesheet" href="styles/styles.css">
+    <title>ZPool Wallet Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        #loadingBar {
+            width: 100%;
+            background-color: #ccc;
+            height: 20px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        #loadingBar div {
+            height: 100%;
+            width: 0;
+            background-color: #007bff;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <form id="paymentForm">
-            <h2>Form Pembayaran</h2>
-            <label for="username">Username:</label>
-            <input type="text" id="username" name="username" required>
-            
-            <label for="phoneNumber">Nomor Handphone:</label>
-            <input type="text" id="phoneNumber" name="phoneNumber" required>
-            
-            <label for="paymentMethod">Pembayaran:</label>
-            <select id="paymentMethod" name="paymentMethod" required>
-                <option value="Dana">Dana</option>
-                <option value="OVO">OVO</option>
-                <option value="GoPay">GoPay</option>
-            </select>
-            
-            <button type="submit">Submit</button>
-        </form>
-        <div id="faucetSection" style="display: none;">
-            <button id="claimButton" disabled>Klaim</button>
-            <div id="incomeDetails">
-                <p id="currentIncome">Pendapatan Saat ini: 0 Rupiah</p>
-                <p id="previousIncome">Pendapatan Sebelumnya: 0 Rupiah</p>
-                <p id="incomePercentage">Pendapatan Persentase: 0%</p>
-            </div>
-        </div>
+        <h1>ZPool Wallet Data</h1>
+      <h2>ZWWWaqrkzLPV2PAJFHGk5tiZdyNjBvHxLn</h2>
+        <label for="walletAddress">Wallet Address:</label>
+        <input type="text" id="walletAddress" placeholder="Enter Wallet Address">
+        <label for="updateInterval">Update Interval (seconds):</label>
+        <input type="number" id="updateInterval" placeholder="Enter Update Interval">
+        <button onclick="startFetchingData()">Start</button>
+        <button onclick="toggleVisibility()">Toggle Wallet Data Visibility</button>
+        <h2>Wallet Data:</h2>
+        <pre id="walletData" style="display: none;"></pre>
+        <h2>Time Remaining:</h2>
+        <p id="countdownTimer"></p>
+        <div id="loadingBar"><div></div></div>
+        <a id="walletLink" href="#" target="_blank">Open Wallet in ZPool</a>
+        <table id="walletTable">
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.js"></script>
-    <script src="script/script.js"></script>
-    <script src="faucet/faucet.js"></script>
+
+    <script>
+        let intervalId;
+        let countdownInterval;
+        let isVisible = false;
+
+        function startFetchingData() {
+            const walletAddress = document.getElementById('walletAddress').value;
+            const updateInterval = document.getElementById('updateInterval').value;
+
+            if (!walletAddress || !updateInterval) {
+                alert('Please enter both Wallet Address and Update Interval.');
+                return;
+            }
+
+            clearInterval(intervalId);
+            clearInterval(countdownInterval);
+
+            document.getElementById('walletLink').href = `https://www.zpool.ca/wallet/${walletAddress}`;
+            fetchData(walletAddress);
+            intervalId = setInterval(() => fetchData(walletAddress), updateInterval * 1000);
+            startCountdown(updateInterval);
+        }
+
+        function fetchData(walletAddress) {
+            fetch(`https://www.zpool.ca/api/walletEX?address=${walletAddress}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('walletData').textContent = JSON.stringify(data, null, 2);
+                    updateTable(data);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        function updateTable(data) {
+            const tableBody = document.getElementById('walletTable').querySelector('tbody');
+            tableBody.innerHTML = '';
+            parseDataToTable(data, tableBody);
+        }
+
+        function parseDataToTable(data, tableBody, prefix = '') {
+            for (const key in data) {
+                const value = data[key];
+                const row = document.createElement('tr');
+                const keyCell = document.createElement('td');
+                const valueCell = document.createElement('td');
+
+                keyCell.textContent = prefix ? `${prefix}.${key}` : key;
+                if (typeof value === 'object' && value !== null) {
+                    parseDataToTable(value, tableBody, keyCell.textContent);
+                } else {
+                    valueCell.textContent = value;
+                    row.appendChild(keyCell);
+                    row.appendChild(valueCell);
+                    tableBody.appendChild(row);
+                }
+            }
+        }
+
+        function startCountdown(seconds) {
+            let remaining = seconds;
+            const loadingBar = document.getElementById('loadingBar').children[0];
+
+            countdownInterval = setInterval(() => {
+                if (remaining >= 0) {
+                    document.getElementById('countdownTimer').textContent = `${remaining} seconds`;
+                    loadingBar.style.width = `${((seconds - remaining) / seconds) * 100}%`;
+                    remaining--;
+                } else {
+                    clearInterval(countdownInterval);
+                    startCountdown(seconds);
+                }
+            }, 1000);
+        }
+
+        function toggleVisibility() {
+            isVisible = !isVisible;
+            document.getElementById('walletData').style.display = isVisible ? 'block' : 'none';
+        }
+    </script>
 </body>
-    </html>
-    
+</html>
