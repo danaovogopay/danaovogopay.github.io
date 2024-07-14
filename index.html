@@ -1,170 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZPool Wallet Data</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            height: 100vh;
-            margin: 0;
-        }
-        .container {
-            text-align: center;
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        input, button {
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            cursor: pointer;
-        }
-        #loadingBar {
-            width: 100%;
-            background-color: #ccc;
-            height: 20px;
-            border-radius: 5px;
-            margin-top: 10px;
-        }
-        #loadingBar div {
-            height: 100%;
-            width: 0;
-            background-color: #007bff;
-            border-radius: 5px;
-        }
-        table {
-            width: 100%;
-            margin-top: 20px;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid #ccc;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estimasi Durasi Tontonan Video YouTube</title>
+  <style>
+    /* CSS untuk menyembunyikan player */
+    #player-container {
+      position: fixed;
+      top: -1000px; /* Posisikan di luar layar */
+      left: -1000px;
+      width: 1px; /* Atur ukuran minimal */
+      height: 1px;
+      overflow: hidden;
+    }
+
+    /* CSS untuk tombol play */
+    #play-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #f00; /* Warna latar belakang tombol (misalnya merah) */
+      color: #fff; /* Warna teks tombol */
+      padding: 10px 20px;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* CSS untuk tombol play yang dinonaktifkan */
+    #play-button.disabled {
+      opacity: 0.5; /* Mengurangi opacity tombol jika dinonaktifkan */
+      pointer-events: none; /* Menonaktifkan event click pada tombol */
+    }
+
+    /* CSS untuk countdown reload */
+    #countdown {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #000;
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 18px;
+      display: none; /* Mulai tersembunyi */
+    }
+
+    /* CSS untuk elemen durasi tontonan */
+    #watch-duration {
+      font-weight: bold;
+    }
+
+    /* CSS untuk elemen penghasilan bekerja */
+    #Pr2 {
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>ZPool Wallet Data</h1>
-      <h2>ZWWWaqrkzLPV2PAJFHGk5tiZdyNjBvHxLn</h2>
-        <label for="walletAddress">Wallet Address:</label>
-        <input type="text" id="walletAddress" placeholder="Enter Wallet Address">
-        <label for="updateInterval">Update Interval (seconds):</label>
-        <input type="number" id="updateInterval" placeholder="Enter Update Interval">
-        <button onclick="startFetchingData()">Start</button>
-        <button onclick="toggleVisibility()">Toggle Wallet Data Visibility</button>
-        <h2>Wallet Data:</h2>
-        <pre id="walletData" style="display: none;"></pre>
-        <h2>Time Remaining:</h2>
-        <p id="countdownTimer"></p>
-        <div id="loadingBar"><div></div></div>
-        <a id="walletLink" href="#" target="_blank">Open Wallet in ZPool</a>
-        <table id="walletTable">
-            <thead>
-                <tr>
-                    <th>Key</th>
-                    <th>Value</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
+  <!-- Kontainer untuk video (sembunyikan dengan CSS) -->
+  <div id="player-container">
+    <div id="player"></div>
+  </div>
 
-    <script>
-        let intervalId;
-        let countdownInterval;
-        let isVisible = false;
+  <!-- Tombol play untuk memulai video -->
+  <button id="play-button">Klaim Pekerjaan</button>
 
-        function startFetchingData() {
-            const walletAddress = document.getElementById('walletAddress').value;
-            const updateInterval = document.getElementById('updateInterval').value;
+  <!-- Elemen untuk menampilkan durasi tontonan -->
+  <p>Waktu Bekerja: <span id="watch-duration">0</span> detik</p>
+  <p>Penghasilan Bekerja: Rp <span id="Pr2">0</span></p>
 
-            if (!walletAddress || !updateInterval) {
-                alert('Please enter both Wallet Address and Update Interval.');
-                return;
-            }
+  <!-- Elemen countdown untuk reload halaman -->
+  <div id="countdown"></div>
 
-            clearInterval(intervalId);
+  <!-- Skrip untuk mengatur player -->
+  <script>
+    let pendapatan = 0;
+    var player;
+    var startTime = null;
+    var durationWatched = 0;
+    var intervalTimer;
+    var playButton = document.getElementById('play-button');
+    var countdownDiv = document.getElementById('countdown');
+    var countdownTime = 10; // Waktu mundur dalam detik
+
+    // Fungsi yang dipanggil ketika API sudah siap
+    function onYouTubeIframeAPIReady() {
+      // Buat instance player baru
+      player = new YT.Player('player', {
+        height: '360',
+        width: '640',
+        videoId: 'HF3M5h6qwmc', // ID video YouTube
+        playerVars: {
+          'controls': 1,
+          'modestbranding': 1,
+          'rel': 0,
+          'showinfo': 0,
+          'fs': 1,
+          'iv_load_policy': 3,
+          'autohide': 1,
+          'playsinline': 1,
+          'cc_load_policy': 0,
+          'disablekb': 0,
+          'vq': 'small' // Kualitas video
+        },
+        events: {
+          'onReady': onPlayerReady,
+          'onStateChange': onPlayerStateChange
+        }
+      });
+    }
+
+    // Fungsi yang dipanggil ketika player sudah siap
+    function onPlayerReady(event) {
+      // Aktifkan tombol play
+      playButton.addEventListener('click', function() {
+        player.playVideo(); // Mulai video
+        playButton.style.display = 'none'; // Sembunyikan tombol setelah diklik
+      });
+    }
+
+    // Fungsi yang dipanggil ketika status pemutaran berubah
+    function onPlayerStateChange(event) {
+      if (event.data == YT.PlayerState.PLAYING && !startTime) {
+        startTime = new Date().getTime(); // Catat waktu mulai tontonan hanya sekali saat pertama kali PLAYING
+        intervalTimer = setInterval(updateWatchDuration, 1000); // Set interval untuk memperbarui durasi setiap detik
+      } else if (event.data == YT.PlayerState.ENDED || event.data == YT.PlayerState.PAUSED) {
+        clearInterval(intervalTimer); // Hentikan interval saat video selesai atau dijeda
+
+        // Tampilkan countdown untuk reload halaman dalam 10 detik
+        countdownDiv.style.display = 'block';
+        countdownDiv.textContent = 'Halaman akan dimuat ulang dalam ' + countdownTime + ' detik';
+
+        // Mulai countdown mundur
+        var countdownInterval = setInterval(function() {
+          countdownTime--;
+          countdownDiv.textContent = 'Halaman akan dimuat ulang dalam ' + countdownTime + ' detik';
+          if (countdownTime <= 0) {
             clearInterval(countdownInterval);
+            location.reload(); // Reload halaman setelah countdown selesai
+          }
+        }, 1000);
+      }
+    }
 
-            document.getElementById('walletLink').href = `https://www.zpool.ca/wallet/${walletAddress}`;
-            fetchData(walletAddress);
-            intervalId = setInterval(() => fetchData(walletAddress), updateInterval * 1000);
-            startCountdown(updateInterval);
-        }
+    // Fungsi untuk mengupdate durasi tontonan setiap detik
+    function updateWatchDuration() {
+      var now = new Date().getTime(); // Waktu saat ini
+      durationWatched = Math.floor((now - startTime) / 1000); // Hitung durasi dalam detik
+      document.getElementById('watch-duration').textContent = durationWatched; // Tampilkan durasi tontonan
 
-        function fetchData(walletAddress) {
-            fetch(`https://www.zpool.ca/api/walletEX?address=${walletAddress}`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('walletData').textContent = JSON.stringify(data, null, 2);
-                    updateTable(data);
-                })
-                .catch(error => console.error('Error fetching data:', error));
-        }
+      const dur = durationWatched; // Simpan durasi tontonan dalam variabel dur
 
-        function updateTable(data) {
-            const tableBody = document.getElementById('walletTable').querySelector('tbody');
-            tableBody.innerHTML = '';
-            parseDataToTable(data, tableBody);
-        }
+      // Hitung pendapatan berdasarkan durasi tontonan
+      const volR = dur * (Math.random() * (5 / 10000) * 0.6 ); // Perhitungan volR
+      pendapatan += (volR * 0.87) * 16000 / dur; // Akumulasi pendapatan
 
-        function parseDataToTable(data, tableBody, prefix = '') {
-            for (const key in data) {
-                const value = data[key];
-                const row = document.createElement('tr');
-                const keyCell = document.createElement('td');
-                const valueCell = document.createElement('td');
+      // Tampilkan pendapatan dalam format mata uang Indonesia
+      document.getElementById('Pr2').textContent = formatCurrency(pendapatan);
+    }
 
-                keyCell.textContent = prefix ? `${prefix}.${key}` : key;
-                if (typeof value === 'object' && value !== null) {
-                    parseDataToTable(value, tableBody, keyCell.textContent);
-                } else {
-                    valueCell.textContent = value;
-                    row.appendChild(keyCell);
-                    row.appendChild(valueCell);
-                    tableBody.appendChild(row);
-                }
-            }
-        }
+    // Fungsi untuk memformat angka menjadi format mata uang Indonesia
+    function formatCurrency(amount) {
+      return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+    }
+  </script>
 
-        function startCountdown(seconds) {
-            let remaining = seconds;
-            const loadingBar = document.getElementById('loadingBar').children[0];
-
-            countdownInterval = setInterval(() => {
-                if (remaining >= 0) {
-                    document.getElementById('countdownTimer').textContent = `${remaining} seconds`;
-                    loadingBar.style.width = `${((seconds - remaining) / seconds) * 100}%`;
-                    remaining--;
-                } else {
-                    clearInterval(countdownInterval);
-                    startCountdown(seconds);
-                }
-            }, 1000);
-        }
-
-        function toggleVisibility() {
-            isVisible = !isVisible;
-            document.getElementById('walletData').style.display = isVisible ? 'block' : 'none';
-        }
-    </script>
+  <!-- Skrip untuk memuat API YouTube -->
+  <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
